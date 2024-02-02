@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 
 def process_files(nexus_file_path, xml_file_path):
   """
-  Reads a NEXUS file and an XML file, inserts or overrides CHARSTATELABELS,
+  Reads a NEXUS file and an XML file, inserts CHARSTATELABELS if missing,
   formatted as specified.
 
   Args:
@@ -13,26 +13,26 @@ def process_files(nexus_file_path, xml_file_path):
   with open(nexus_file_path, "r+") as nexus_file:
     lines = nexus_file.readlines()
 
-    charstatelabels_start_index = None
+    has_charstatelabels = False
     matrix_index = None
     for i, line in enumerate(lines):
       stripped_line = line.strip()
       if stripped_line.startswith("CHARSTATELABELS"):
-        charstatelabels_start_index = i
+        has_charstatelabels = True
       elif stripped_line.startswith("MATRIX"):
         matrix_index = i
         break
 
-    if charstatelabels_start_index is not None and matrix_index is not None:
+    if not has_charstatelabels and matrix_index is not None:
       charstatelabels = generate_charstatelabels_from_xml(xml_file_path)
 
-      # Override existing CHARSTATELABELS with matching indentation
+      # Insert CHARSTATELABELS with matching indentation
       indent_level = len(line) - len(line.lstrip())
       indented_lines = [f"{' ' * indent_level}{label}\n" for label in charstatelabels]
-      lines[charstatelabels_start_index:matrix_index] = ["\tCHARSTATELABELS\n"] + indented_lines
+      lines[matrix_index:matrix_index] = ["\tCHARSTATELABELS\n"] + indented_lines
 
-    nexus_file.seek(0)
-    nexus_file.writelines(lines)
+      nexus_file.seek(0)
+      nexus_file.writelines(lines)
 
 def generate_charstatelabels_from_xml(xml_file_path):
   """
@@ -64,8 +64,9 @@ def generate_charstatelabels_from_xml(xml_file_path):
   charstatelabels[-1] = charstatelabels[-1].replace(",", ";")  # Replace comma with semicolon for the last line
   return charstatelabels
 
-
+"""
 if __name__ == "__main__":
-  nexus_file_path = r"C:\data\Basal_Crocodilia_Clark_&_Sues_2002\Basal_Crocodilia_Clark_&_Sues_2002-t1.nex" # Replace with your NEXUS file path
-  xml_file_path = r"C:\data\Basal_Crocodilia_Clark_&_Sues_2002\character-list-xml-tree.xml" # Replace with your XML file path
+  nexus_file_path = # Replace with your NEXUS file path
+  xml_file_path = # Replace with your XML file path
   process_files(nexus_file_path, xml_file_path)
+"""

@@ -53,3 +53,6 @@ if charstate_pdf and nexus_file:
         data=open(nexus_file_path, "rb").read(),  # Open the file in binary mode to read its contents
         file_name=os.path.basename(nexus_file_path)  # Set the suggested filename for the download
     )
+
+
+
