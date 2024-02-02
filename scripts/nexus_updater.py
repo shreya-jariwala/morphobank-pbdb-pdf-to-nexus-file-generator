@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 
 def process_files(nexus_file_path, xml_file_path):
   """
-  Reads a NEXUS file and an XML file, inserts CHARSTATELABELS if missing,
+  Reads a NEXUS file and an XML file, inserts or overrides CHARSTATELABELS,
   formatted as specified.
 
   Args:
@@ -13,26 +13,26 @@ def process_files(nexus_file_path, xml_file_path):
   with open(nexus_file_path, "r+") as nexus_file:
     lines = nexus_file.readlines()
 
-    has_charstatelabels = False
+    charstatelabels_start_index = None
     matrix_index = None
     for i, line in enumerate(lines):
       stripped_line = line.strip()
       if stripped_line.startswith("CHARSTATELABELS"):
-        has_charstatelabels = True
+        charstatelabels_start_index = i
       elif stripped_line.startswith("MATRIX"):
         matrix_index = i
         break
 
-    if not has_charstatelabels and matrix_index is not None:
+    if charstatelabels_start_index is not None and matrix_index is not None:
       charstatelabels = generate_charstatelabels_from_xml(xml_file_path)
 
-      # Insert CHARSTATELABELS with matching indentation
+      # Override existing CHARSTATELABELS with matching indentation
       indent_level = len(line) - len(line.lstrip())
       indented_lines = [f"{' ' * indent_level}{label}\n" for label in charstatelabels]
-      lines[matrix_index:matrix_index] = ["\tCHARSTATELABELS\n"] + indented_lines
+      lines[charstatelabels_start_index:matrix_index] = ["\tCHARSTATELABELS\n"] + indented_lines
 
-      nexus_file.seek(0)
-      nexus_file.writelines(lines)
+    nexus_file.seek(0)
+    nexus_file.writelines(lines)
 
 def generate_charstatelabels_from_xml(xml_file_path):
   """
@@ -64,7 +64,9 @@ def generate_charstatelabels_from_xml(xml_file_path):
   charstatelabels[-1] = charstatelabels[-1].replace(",", ";")  # Replace comma with semicolon for the last line
   return charstatelabels
 
+"""
 if __name__ == "__main__":
-  nexus_file_path = r"G:\Shared drives\My Drive (aquiveal@gmail.com)\Projects\Large Language Model - MorphoBank\Testing\Adelophthalmoidea_Tetlie_Poschmann_2008-t5.nex"  # Replace with your NEXUS file path
-  xml_file_path = r"G:\Shared drives\My Drive (aquiveal@gmail.com)\Projects\Large Language Model - MorphoBank\Testing\Adelophthalmoidea_Tetlie_&_Poschmann_2008-character-list.xml"  # Replace with your XML file path
+  nexus_file_path =  # Replace with your NEXUS file path
+  xml_file_path = # Replace with your XML file path
   process_files(nexus_file_path, xml_file_path)
+"""
