@@ -1,5 +1,4 @@
 lxml
 beautifulsoup4
 requests
-os
 google-generativeai
