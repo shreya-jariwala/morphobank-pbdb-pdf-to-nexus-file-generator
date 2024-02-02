@@ -64,9 +64,7 @@ def generate_charstatelabels_from_xml(xml_file_path):
   charstatelabels[-1] = charstatelabels[-1].replace(",", ";")  # Replace comma with semicolon for the last line
   return charstatelabels
 
-"""
 if __name__ == "__main__":
-  nexus_file_path = # Replace with your NEXUS file path
-  xml_file_path = # Replace with your XML file path
+  nexus_file_path = r"G:\Shared drives\My Drive (aquiveal@gmail.com)\Projects\Large Language Model - MorphoBank\Testing\Adelophthalmoidea_Tetlie_Poschmann_2008-t5.nex"  # Replace with your NEXUS file path
+  xml_file_path = r"G:\Shared drives\My Drive (aquiveal@gmail.com)\Projects\Large Language Model - MorphoBank\Testing\Adelophthalmoidea_Tetlie_&_Poschmann_2008-character-list.xml"  # Replace with your XML file path
   process_files(nexus_file_path, xml_file_path)
-"""
