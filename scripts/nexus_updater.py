@@ -1,38 +1,42 @@
 import xml.etree.ElementTree as ET
 
 def process_files(nexus_file_path, xml_file_path):
-  """
-  Reads a NEXUS file and an XML file, inserts or overrides CHARSTATELABELS,
-  formatted as specified.
+    """ ... (docstring remains the same) ... """
 
-  Args:
-    nexus_file_path (str): Path to the NEXUS file.
-    xml_file_path (str): Path to the XML file.
-  """
+    try:
+        with open(nexus_file_path, "r+") as nexus_file:
+            lines = nexus_file.readlines()
 
-  with open(nexus_file_path, "r+") as nexus_file:
-    lines = nexus_file.readlines()
+            charstatelabels_start_index = None
+            matrix_index = None
+            matrix_indent = None
 
-    charstatelabels_start_index = None
-    matrix_index = None
-    for i, line in enumerate(lines):
-      stripped_line = line.strip()
-      if stripped_line.startswith("CHARSTATELABELS"):
-        charstatelabels_start_index = i
-      elif stripped_line.startswith("MATRIX"):
-        matrix_index = i
-        break
+            for i, line in enumerate(lines):
+                stripped_line = line.strip()
+                if stripped_line.startswith("CHARSTATELABELS"):
+                    charstatelabels_start_index = i
+                elif stripped_line.startswith("MATRIX"):
+                    matrix_index = i
+                    matrix_indent = len(line) - len(line.lstrip())
+                    break
 
-    if charstatelabels_start_index is not None and matrix_index is not None:
-      charstatelabels = generate_charstatelabels_from_xml(xml_file_path)
+            charstatelabels = generate_charstatelabels_from_xml(xml_file_path)
 
-      # Override existing CHARSTATELABELS with matching indentation
-      indent_level = len(line) - len(line.lstrip())
-      indented_lines = [f"{' ' * indent_level}{label}\n" for label in charstatelabels]
-      lines[charstatelabels_start_index:matrix_index] = ["\tCHARSTATELABELS\n"] + indented_lines
+            if matrix_index is not None:
+                insert_index = matrix_index
+                if charstatelabels_start_index is not None:  # Overwrite existing
+                     insert_index = charstatelabels_start_index
 
-    nexus_file.seek(0)
-    nexus_file.writelines(lines)
+                indented_lines = [f"{' ' * matrix_indent}{label}\n" for label in charstatelabels]
+                lines[insert_index:insert_index] = [f"{' ' * matrix_indent}\tCHARSTATELABELS\n"] + indented_lines
+
+            nexus_file.seek(0)
+            nexus_file.writelines(lines)
+
+    except FileNotFoundError as e:
+        print(f"Error: File not found ({e.filename})")
+    except ET.ParseError as e:
+        print(f"Error parsing XML: {e}")
 
 def generate_charstatelabels_from_xml(xml_file_path):
   """
