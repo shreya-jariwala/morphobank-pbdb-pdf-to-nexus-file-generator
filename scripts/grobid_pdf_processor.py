@@ -27,10 +27,3 @@ def process_full_text_document(grobid_api_url, pdf_file_path, output_file_path):
 
         except requests.exceptions.RequestException as e:
             print(f"Error processing PDF: {e}")
-
-# Example usage:
-#grobid_api_url = "http://localhost:8070"  # Replace with your Grobid API URL
-#pdf_file_path = "path/to/pdf/file.pdf"  # Replace with the path to the PDF file to be processed
-#output_file_path = "path/to/output/file.xml"  # Replace with the path to save the processed output
-
-#process_full_text_document(grobid_api_url, pdf_file_path, output_file_path)
