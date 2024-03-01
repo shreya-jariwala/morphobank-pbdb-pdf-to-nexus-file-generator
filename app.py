@@ -3,7 +3,7 @@ import os
 
 # Import your Python scripts
 from utils import handler
-from processors import character_state_processor
+import character_state_processor
 
 from parsers import pymupdf_parser
 from file_handlers import pdf_handler, nexus_handler
