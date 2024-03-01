@@ -1,5 +1,8 @@
+streamlit
 lxml
-beautifulsoup4
 requests
 google-generativeai
-html5lib
+PyPyMuPDF
+google-cloud-vision
+google-cloud-aiplatform
+futures

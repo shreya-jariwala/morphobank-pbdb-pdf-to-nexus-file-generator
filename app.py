@@ -2,57 +2,79 @@ import streamlit as st
 import os
 
 # Import your Python scripts
-from scripts import grobid_pdf_processor, extract_text_from_xml, trim_paper_for_prompt, prompt_character_list, prompt_xml_tree, build_character_list_xml_tree, nexus_updater
+from utils import handler
+from processors import character_state_processor
+
+from parsers import pymupdf_parser
+from file_handlers import pdf_handler, nexus_handler
 
 # Layout and file upload
+
 st.title("MorphoBank PBDB PDF to NEXUS File Generator")
 
-charstate_pdf = st.file_uploader("Upload PDF containing the Character List", type="pdf")
-nexus_file = st.file_uploader("Upload Empty NEXUS File", type="nex")
+st.subheader("Start by Uploading the Document.")
+st.write("Please upload the file containing the character list. Ideally I want you to keep the file open side by side to help me with more information that will help me process you request more effeciently")
 
-if charstate_pdf and nexus_file:
-    # Create output directory
-    working_dir = os.path.join(r"/data", os.path.splitext(nexus_file.name)[0])
-    os.makedirs(working_dir, exist_ok=True)  # Create if it doesn't exist
+research_paper = st.file_uploader("Upload Character List file", type="pdf")
 
-    # Save uploaded files to the working directory
-    with open(os.path.join(working_dir, charstate_pdf.name), "wb") as f:
-        f.write(charstate_pdf.getbuffer())
-    with open(os.path.join(working_dir, nexus_file.name), "wb") as f:
-        f.write(nexus_file.getbuffer())
+parsing_method_description = st.empty()
 
-    # Generate output file names
-    charstate_pdf_path = os.path.join(working_dir, charstate_pdf.name)  # Constructed path using output_dir
-    processed_xml_path = os.path.join(working_dir, "processed-pdf.xml")  # Constructed path using output_dir
-    extracted_tags_path = os.path.join(working_dir, "extracted-tags.txt")
-    trimmed_paper_path = os.path.join(working_dir, "trimmed-paper.txt")
-    extracted_character_list_path = os.path.join(working_dir, "extracted-character-list.txt")
-    extracted_character_list_xml_tree_path = os.path.join(working_dir, "extracted-character-list-xml-tree.txt")
-    character_list_xml_tree_path = os.path.join(working_dir, "character-list-xml-tree.xml")
-    nexus_file_path = os.path.join(working_dir, nexus_file.name)
+st.subheader("Define your Characters")
+st.write("""
+    Please identify the pages in the document where the character state labels are located? Also, please specify the number of characters and their corresponding states that you'd like me to extract
+""")
 
-    # Define Grobid server
-    grobid_api_url = "http://35.188.91.205:8070"
+opt_col1, opt_col2 = st.columns(2)
 
-    # Define prompts
-    character_list_extraction_prompt = "Identify and extract the following information from the provided text: Character list: A list of characters or features being described, along with their possible states or values. Additional instructions: Prioritize clarity and precision in the extracted data."
-    character_list_xml_tree_extraction_prompt = """Generate XML code that represents the following character list: Structure: Represent each character with a <character> element. Enclose all characters within a root element named <characters>. Assign the characters name to the name attribute of the <character> element. List each state within a separate <state> element under the <character> element. Desired structure: <characters> <character name="Triangular 'doublure lock' anteriorly on carapace"> <state>absent</state> <state>present</state> </character>"""
+with opt_col1:
+    charstate_page_range = st.text_input("Pages in Range (Inclusive)", placeholder="3-4")
 
-    # Process the files
-    processed_xml = grobid_pdf_processor.process_full_text_document(grobid_api_url, charstate_pdf_path, working_dir)  # Call the function
-    extracted_tags = extract_text_from_xml.extract_text_from_p_tags(processed_xml_path, working_dir)  # Call the function
-    trimmed_paper = trim_paper_for_prompt.extract_last_characters(extracted_tags_path, working_dir)  # Call the function
-    extracted_character_list = prompt_character_list.prompt_and_save_response(trimmed_paper_path, working_dir, character_list_extraction_prompt)
-    extracted_character_list_xml_tree = prompt_xml_tree.prompt_and_save_tree(extracted_character_list_path, working_dir, character_list_xml_tree_extraction_prompt)
-    character_list_xml_tree = build_character_list_xml_tree.parse_broken_xml(extracted_character_list_xml_tree_path, working_dir)
-    updated_nexus_file = nexus_updater.process_files(nexus_file_path, character_list_xml_tree_path)
+with opt_col2:
+    charstate_count = st.number_input("Number of Characters", step=int(1))
 
-    # Add download button for the updated NEXUS file
-    st.download_button(
-        label="Download File",
-        data=open(nexus_file_path, "rb").read(),  # Open the file in binary mode to read its contents
-        file_name=os.path.basename(nexus_file_path)  # Set the suggested filename for the download
-    )
+st.subheader("Upload the Empty NEXUS File")
+st.write("Please upload the Nexus file with the missing character state labels that need to be processed.")
+nexus_file = st.file_uploader("Upload NEXUS File", type="nex")
 
+character_state_view = st.empty()
 
+# Processing
 
+with st.sidebar:
+    if st.button("Process NEXUS file"):
+
+        with st.status("Processing...", expanded=True) as status:
+            
+            st.write("Parsing the Document...")
+            start_page, end_page = handler.get_page_range(charstate_page_range)
+            if research_paper:
+                filename, file_extension = os.path.splitext(research_paper.name)
+                if file_extension.lower() == '.pdf':
+
+                    st.write("Extracting Pages...")
+                    extracted_pages = pdf_handler.extract_pages(research_paper, start_page, end_page)
+
+                    st.write("Extracting Text from Pages...")
+                    text_data = pymupdf_parser.parse_pdf(extracted_pages)
+
+                #elif file_extension.lower() == '.word':
+                   # st.write("Extracting Text from Pages...")
+                    #text_data = docx_handler.extract_text_by_page(research_paper, start_page, end_page)
+            
+            st.write("Extracting Character and State Data as XML Tree...")
+            character_state_tree = character_state_processor.generate_character_state_tree(text_data, charstate_count)
+
+            st.write("Building Character State Labels...")
+            character_state_labels = character_state_processor.build_character_state_labels(character_state_tree)
+
+            st.write("Updating the NEXUS file...")
+            new_nexus_file = nexus_handler.insert_or_replace_charstatelabels(nexus_file, character_state_labels)
+
+            status.update(label="Processing complete!", state="complete", expanded=False)
+
+        # Create a download button
+        download_button = st.download_button(
+            label="Download the updated NEXUS File",
+            data=new_nexus_file,
+            file_name=filename + ".nex",
+        )
