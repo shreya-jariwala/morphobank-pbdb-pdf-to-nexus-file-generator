@@ -6,3 +6,4 @@ PyMuPDF
 google-cloud-vision
 google-cloud-aiplatform
 futures
+PyPDF2
