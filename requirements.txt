@@ -2,7 +2,7 @@ streamlit
 lxml
 requests
 google-generativeai
-PyPyMuPDF
+PyMuPDF
 google-cloud-vision
 google-cloud-aiplatform
 futures
